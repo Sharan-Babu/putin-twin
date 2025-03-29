@@ -70,7 +70,7 @@ Information from the web (use only if relevant to the query):
     model = genai.GenerativeModel("gemini-2.0-flash")
     prompt = f"""Based on the following query: "{query}", generate a single HTML file that visualizes or presents relevant information from this datasource content. Choose the right UI interface for presenting the response. The HTML should be modern, responsive, and can use external libraries via CDN. Make it visually appealing.
 
-Do not include any disclaimers or footers."""
+Do not include any disclaimers or footers. First, think of the relevant information in the General Information and the web information and hwo they can be combined (plan it). Then, proceed with the necessary html code."""
 
     response = model.generate_content(prompt, safety_settings={'HARASSMENT': 'block_none'})
     return clean_html_response(response.text)
