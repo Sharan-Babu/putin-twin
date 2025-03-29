@@ -14,12 +14,29 @@ with open('datasource.txt', 'r', encoding='utf-8') as file:
     DATASOURCE_CONTENT = file.read()
 
 def get_web_search_results(query):
-    model = genai.GenerativeModel('gemini-2.0-flash')
-    
-    prompt = f"""Based on this query: "{query}", fetch relevant recent news and information and return it. That is all."""
-
     try:
-        response = model.generate_content(prompt, safety_settings={'HARASSMENT': 'block_none'})
+        # Initialize the model with web search capabilities
+        model = genai.GenerativeModel('gemini-pro')
+        
+        # Create the prompt for web search
+        prompt = f"""Based on this query: "{query}", search for and provide recent news, developments, and factual information. 
+        Include specific dates and citations from reliable sources. Focus on verifiable information that would enhance our understanding of the query.
+        Format your response in a clear, organized way with proper citations."""
+
+        # Generate content with safety settings
+        response = model.generate_content(
+            prompt,
+            generation_config=genai.types.GenerationConfig(
+                temperature=0.4
+            ),
+            safety_settings={
+                "HARASSMENT": "block_none",
+                "HATE_SPEECH": "block_none",
+                "SEXUALLY_EXPLICIT": "block_none",
+                "DANGEROUS_CONTENT": "block_none",
+            }
+        )
+        
         return response.text
     except Exception as e:
         print(f"Web search error: {str(e)}")
