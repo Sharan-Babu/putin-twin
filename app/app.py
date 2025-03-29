@@ -10,7 +10,7 @@ app = Flask(__name__)
 GEMINI_API_KEY = "AIzaSyDy3vyaXfTzO5QdcO6ClsuvLmC2fV_vjB0"
 genai.configure(api_key=GEMINI_API_KEY)
 
-# Load the datasource content
+# Load the datasource content and test the model on it
 with open('datasource.txt', 'r', encoding='utf-8') as file:
     DATASOURCE_CONTENT = file.read()
 
