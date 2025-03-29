@@ -16,9 +16,7 @@ with open('datasource.txt', 'r', encoding='utf-8') as file:
 def get_web_search_results(query):
     model = genai.GenerativeModel('gemini-2.0-flash')
     
-    prompt = f"""Based on this query: "{query}", fetch relevant recent news and information. Include citations in your response. Focus on factual, verifiable information that would enhance our understanding of the query.
-
-Please format your response in a clear, organized way with proper citations."""
+    prompt = f"""Based on this query: "{query}", fetch relevant recent news and information. Please format your response in a clear, organized way with proper citations."""
 
     try:
         response = model.generate_content(prompt, safety_settings={'HARASSMENT': 'block_none'})
@@ -44,19 +42,15 @@ def generate_html(query):
     
     # Combine original datasource with web results
     combined_content = f"""
-Original Timeline:
+General Information about Putin:
 {DATASOURCE_CONTENT}
 
-Recent Updates and Additional Information:
+Recent Updates and Additional Information from the web:
 {web_results}
 """
     
     model = genai.GenerativeModel("gemini-2.0-flash")
-    prompt = f"""Based on the following query: "{query}", generate a single HTML file that visualizes or presents relevant information from this datasource content. The HTML should be modern, responsive, and can use external libraries via CDN. Include any necessary CSS and JavaScript inline or via CDN links. Make it visually appealing and interactive where appropriate.
-
-Here's the combined datasource content to use:
-
-{combined_content}
+    prompt = f"""Based on the following query: "{query}", generate a single HTML file that visualizes or presents relevant information from this datasource content. Choose the right UI interface for presenting the response. The HTML should be modern, responsive, and can use external libraries via CDN. Make it visually appealing.
 
 Return ONLY the complete HTML code without any explanations or markdown formatting. The HTML should incorporate both historical timeline data and recent updates where relevant. Return only the HTML code for the question asked and nothing else."""
 
