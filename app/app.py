@@ -1,10 +1,11 @@
 import os
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session
 import google.generativeai as genai
 from openai import OpenAI
 import re
 
 app = Flask(__name__)
+app.secret_key = 'your-secret-key-here'  # Required for session management
 
 # Configure Gemini API
 GEMINI_API_KEY = "AIzaSyDy3vyaXfTzO5QdcO6ClsuvLmC2fV_vjB0"
@@ -57,14 +58,8 @@ def get_web_search_results(query):
         response = model.generate_content(
             prompt,
             generation_config=genai.types.GenerationConfig(
-                temperature=0.4
-            ),
-            safety_settings={
-                "HARASSMENT": "block_none",
-                "HATE_SPEECH": "block_none",
-                "SEXUALLY_EXPLICIT": "block_none",
-                "DANGEROUS_CONTENT": "block_none",
-            }
+                temperature=0.5
+            )
         )
         
         return response.text
@@ -83,12 +78,35 @@ def clean_html_response(html_text):
         return match.group(0)
     return html_text
 
-def generate_html(query):
+def generate_html(query, chat_history=None):
+    if chat_history is None:
+        chat_history = []
+
     # First, get web search results
     web_results = get_web_search_results_perplexity(query)
     print(web_results)
     
-    # Combine original datasource with web results
+    # Initialize the model
+    model = genai.GenerativeModel('gemini-2.0-flash')
+    
+    # Create chat history in the format Gemini expects
+    gemini_history = []
+    for msg in chat_history:
+        if msg['role'] == 'user':
+            gemini_history.append({
+                "role": "user",
+                "parts": [msg['content']]
+            })
+        else:
+            gemini_history.append({
+                "role": "model",
+                "parts": [msg['content']]
+            })
+
+    # Start a new chat
+    chat = model.start_chat(history=gemini_history)
+
+    # Combine original datasource with web results for the current query
     combined_content = f"""
 Your purpose is to act as Putin's digital twin and think like him based on information given below about him. Answer according to the user query. 
 
@@ -98,24 +116,26 @@ General Information about Putin (Data Source):
 Information from the web (use only if relevant to the query):
 {web_results}
 """
-    
-    model = genai.GenerativeModel("gemini-2.0-flash")
+
     prompt = f"""Based on the following user query: "{query}", generate a single HTML file that visualizes or presents relevant information from this datasource content. Choose the right UI interface for presenting the response. The HTML should be modern, responsive, and can use external libraries via CDN. Make it visually appealing.
 
- First, think of the relevant information in the General Information and the web information and how they can be combined (plan it). Try to back your reasoning with information from the Data Source (Include this reasoning too in html). Then, proceed with the necessary html code. DO NOT include any disclaimers, footers, images."""
+First, think of the relevant information in the General Information and the web information and how they can be combined (plan it). Try to back your reasoning with information from the Data Source (Include this reasoning too in html). Then, proceed with the necessary html code. DO NOT include any disclaimers, footers, images."""
 
-    response = model.generate_content(
-        prompt,
+    # Send the combined content and prompt
+    response = chat.send_message(
+        combined_content + "\n\n" + prompt,
         generation_config=genai.types.GenerationConfig(
             temperature=0.4
-        ),
-        safety_settings={'HARASSMENT': 'block_none'}
+        )
     )
+    
     return clean_html_response(response.text)
 
 @app.route('/')
 def home():
-    return render_template('index.html')
+    if 'chat_history' not in session:
+        session['chat_history'] = []
+    return render_template('index.html', chat_history=session['chat_history'])
 
 @app.route('/generate', methods=['POST'])
 def generate():
@@ -124,10 +144,39 @@ def generate():
         return jsonify({'error': 'No query provided'}), 400
     
     try:
-        generated_html = generate_html(query)
-        return jsonify({'html': generated_html})
+        # Get chat history from session
+        chat_history = session.get('chat_history', [])
+        
+        # Add user message to history
+        chat_history.append({
+            'role': 'user',
+            'content': query
+        })
+        
+        # Generate response
+        generated_html = generate_html(query, chat_history)
+        print(generated_html)
+        
+        # Add assistant response to history
+        chat_history.append({
+            'role': 'assistant',
+            'content': generated_html
+        })
+        
+        # Update session
+        session['chat_history'] = chat_history
+        
+        return jsonify({
+            'html': generated_html,
+            'chat_history': chat_history
+        })
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+@app.route('/clear_chat', methods=['POST'])
+def clear_chat():
+    session['chat_history'] = []
+    return jsonify({'status': 'success'})
 
 if __name__ == '__main__':
     app.run(debug=True) 
