@@ -14,6 +14,7 @@ genai.configure(api_key=GEMINI_API_KEY)
 with open('datasource.txt', 'r', encoding='utf-8') as file:
     DATASOURCE_CONTENT = file.read()
 
+# Clean the html response
 def clean_html_response(html_text):
     # Remove any ``` markers
     html_text = re.sub(r'```html?\s*', '', html_text)
