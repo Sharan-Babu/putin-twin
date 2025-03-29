@@ -39,13 +39,14 @@ def clean_html_response(html_text):
 def generate_html(query):
     # First, get web search results
     web_results = get_web_search_results(query)
+    print(web_results)
     
     # Combine original datasource with web results
     combined_content = f"""
 General Information about Putin:
 {DATASOURCE_CONTENT}
 
-Recent Updates and Additional Information from the web:
+Information from the web (use only if relevant to the query):
 {web_results}
 """
     
