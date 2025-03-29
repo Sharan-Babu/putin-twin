@@ -25,7 +25,7 @@ def clean_html_response(html_text):
         return match.group(0)
     return html_text
 
-def generate_html(query):
+def generate_html(query): 
     model = genai.GenerativeModel("gemini-2.0-flash-thinking-exp-01-21")
     prompt = f"""Based on the following query: "{query}", generate a single HTML file that visualizes or presents relevant information from this datasource content. The HTML should be modern, responsive, and can use external libraries via CDN. Include any necessary CSS and JavaScript inline or via CDN links. Make it visually appealing and interactive where appropriate.
 
