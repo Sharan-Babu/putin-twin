@@ -60,6 +60,8 @@ def generate_html(query):
     
     # Combine original datasource with web results
     combined_content = f"""
+Your purpose is to act as Putin's digital twin and think like him based on information given below about him. 
+
 General Information about Putin (Data Source):
 {DATASOURCE_CONTENT}
 
