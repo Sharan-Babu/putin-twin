@@ -29,7 +29,7 @@ def get_web_search_results_perplexity(query):
             messages=[
                 {
                     "role": "system",
-                    "content": "You are a research assistant. Search for and provide recent news, developments, and factual information about the query. Include specific dates and citations from reliable sources. Focus on verifiable information and format your response in a clear, organized way with proper citations."
+                    "content": "You are a research assistant. Search for and provide recent news, developments, and factual information about the query. Include specific dates and citations from reliable sources. Focus on verifiable information and format your response in a clear, organized way. Return the information as a list of bullet points, with each point being a separate finding or fact."
                 },
                 {
                     "role": "user",
@@ -37,10 +37,14 @@ def get_web_search_results_perplexity(query):
                 }
             ]
         )
-        return completion.choices[0].message.content
+        # Split the response into bullet points and clean them up
+        results = completion.choices[0].message.content.split('\n')
+        # Clean up and filter empty lines
+        results = [line.strip().lstrip('•-* ') for line in results if line.strip()]
+        return results
     except Exception as e:
         print(f"Perplexity web search error: {str(e)}")
-        return ""
+        return []
 
 def get_web_search_results(query):
     try:
@@ -53,7 +57,7 @@ def get_web_search_results(query):
         model = genai.GenerativeModel('gemini-pro')
         prompt = f"""Based on this query: "{query}", search for and provide recent news, developments, and factual information. 
         Include specific dates and citations from reliable sources. Focus on verifiable information that would enhance our understanding of the query.
-        Format your response in a clear, organized way with proper citations."""
+        Format your response as a bullet-point list, with each point being a separate finding or fact."""
 
         response = model.generate_content(
             prompt,
@@ -62,10 +66,14 @@ def get_web_search_results(query):
             )
         )
         
-        return response.text
+        # Split the response into bullet points and clean them up
+        results = response.text.split('\n')
+        # Clean up and filter empty lines
+        results = [line.strip().lstrip('•-* ') for line in results if line.strip()]
+        return results
     except Exception as e:
         print(f"Web search error: {str(e)}")
-        return ""
+        return []
 
 def clean_html_response(html_text):
     # Remove any ``` markers
@@ -84,46 +92,48 @@ def generate_html(query, chat_history=None):
 
     # First, get web search results
     web_results = get_web_search_results_perplexity(query)
-    print(web_results)
     
     # Initialize the model
     model = genai.GenerativeModel('gemini-2.0-flash')
     
-    # Create chat history in the format Gemini expects
-    gemini_history = []
-    for msg in chat_history:
-        if msg['role'] == 'user':
-            gemini_history.append({
-                "role": "user",
-                "parts": [msg['content']]
-            })
-        else:
-            gemini_history.append({
-                "role": "model",
-                "parts": [msg['content']]
-            })
+    # Format chat history in a more context-aware way
+    formatted_history = ""
+    if chat_history:
+        formatted_history = "Previous conversation:\n"
+        for msg in chat_history[:-1]:  # Exclude the current query
+            role = "User" if msg['role'] == 'user' else "Assistant"
+            formatted_history += f"{role}: {msg['content']}\n"
 
-    # Start a new chat
-    chat = model.start_chat(history=gemini_history)
-
-    # Combine original datasource with web results for the current query
+    # Combine original datasource with web results and chat history
     combined_content = f"""
-Your purpose is to act as Putin's digital twin and think like him based on information given below about him. Answer according to the user query. 
+You are Putin's digital twin, tasked with thinking and responding like him based on the following information. 
+Maintain consistent context with previous conversation and respond naturally to follow-up questions.
 
 General Information about Putin (Data Source):
 {DATASOURCE_CONTENT}
 
-Information from the web (use only if relevant to the query):
+Previous Conversation Context:
+{formatted_history}
+
+Recent Information from web search (if relevant to query):
 {web_results}
+
+Current user query: "{query}"
+
+Instructions:
+1. Consider the entire conversation history when formulating your response
+2. Maintain consistency with previous answers
+3. Reference relevant parts of the previous conversation if needed
+4. Generate a single HTML file that visualizes your response
+5. Make the HTML modern, responsive, and visually appealing (can use external libraries via CDN)
+6. DO NOT include disclaimers, footers, or images
+7. If the query references something from previous conversation, make sure to maintain that context
 """
 
-    prompt = f"""Based on the following user query: "{query}", generate a single HTML file that visualizes or presents relevant information from this datasource content. Choose the right UI interface for presenting the response. The HTML should be modern, responsive, and can use external libraries via CDN. Make it visually appealing.
-
-First, think of the relevant information in the General Information and the web information and how they can be combined (plan it). Try to back your reasoning with information from the Data Source (Include this reasoning too in html). Then, proceed with the necessary html code. DO NOT include any disclaimers, footers, images."""
-
-    # Send the combined content and prompt
-    response = chat.send_message(
-        combined_content + "\n\n" + prompt,
+    print(combined_content)
+    # Send the combined content
+    response = model.generate_content(
+        combined_content,
         generation_config=genai.types.GenerationConfig(
             temperature=0.4
         )
@@ -155,12 +165,13 @@ def generate():
         
         # Generate response
         generated_html = generate_html(query, chat_history)
-        print(generated_html)
+        web_results = get_web_search_results(query)
         
-        # Add assistant response to history
+        # Add assistant response to history with web results
         chat_history.append({
             'role': 'assistant',
-            'content': generated_html
+            'content': generated_html,
+            'web_results': web_results
         })
         
         # Update session
@@ -168,6 +179,7 @@ def generate():
         
         return jsonify({
             'html': generated_html,
+            'web_results': web_results,
             'chat_history': chat_history
         })
     except Exception as e:

@@ -122,6 +122,53 @@
             border-radius: 0.5rem;
             transition: height 0.3s ease;
         }
+        .web-search-results {
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+            overflow: hidden;
+        }
+        .web-search-toggle {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #f1f5f9;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .web-search-toggle:hover {
+            background-color: #e2e8f0;
+        }
+        .web-search-toggle i {
+            transition: transform 0.2s;
+        }
+        .web-search-toggle.active i {
+            transform: rotate(180deg);
+        }
+        .web-search-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            padding: 0 1rem;
+        }
+        .web-search-content.active {
+            max-height: 500px;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+        .web-search-item {
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .web-search-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
     </style>
 </head>
 <body>
@@ -143,6 +190,21 @@
                     </div>
                 {% else %}
                     <div class="message assistant-message">
+                        {% if message.web_results %}
+                        <div class="web-search-results">
+                            <button class="web-search-toggle">
+                                <span class="text-sm font-medium text-gray-700">View Web Search Results</span>
+                                <i class="fas fa-chevron-down text-gray-500"></i>
+                            </button>
+                            <div class="web-search-content">
+                                {% for result in message.web_results %}
+                                <div class="web-search-item">
+                                    <p class="text-sm text-gray-600">{{ result }}</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        {% endif %}
                         <iframe class="response-iframe" srcdoc="{{ message.content|safe }}" onload="resizeIframe(this)"></iframe>
                     </div>
                 {% endif %}
@@ -214,6 +276,17 @@
             this.style.height = (this.scrollHeight) + 'px';
         });
 
+        // Toggle web search results
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.web-search-toggle')) {
+                const toggle = e.target.closest('.web-search-toggle');
+                const content = toggle.nextElementSibling;
+                
+                toggle.classList.toggle('active');
+                content.classList.toggle('active');
+            }
+        });
+
         document.getElementById('queryForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const query = document.getElementById('query').value;
@@ -247,9 +320,31 @@
                 const data = await response.json();
                 
                 if (response.ok) {
-                    // Add assistant message
+                    // Add assistant message with web search results
                     const assistantMessage = document.createElement('div');
                     assistantMessage.className = 'message assistant-message';
+
+                    // Add web search results if available
+                    if (Array.isArray(data.web_results) && data.web_results.length > 0) {
+                        const webSearchResults = document.createElement('div');
+                        webSearchResults.className = 'web-search-results';
+                        webSearchResults.innerHTML = `
+                            <button class="web-search-toggle">
+                                <span class="text-sm font-medium text-gray-700">View Web Search Results (${data.web_results.length} items)</span>
+                                <i class="fas fa-chevron-down text-gray-500"></i>
+                            </button>
+                            <div class="web-search-content">
+                                ${data.web_results.map(result => `
+                                    <div class="web-search-item">
+                                        <p class="text-sm text-gray-600">${result}</p>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        `;
+                        assistantMessage.appendChild(webSearchResults);
+                    }
+
+                    // Add iframe for the main response
                     const iframe = document.createElement('iframe');
                     iframe.className = 'response-iframe';
                     iframe.onload = function() { resizeIframe(this); };
