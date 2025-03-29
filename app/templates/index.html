@@ -3,46 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Putin Digital Twin</title>
+    <title>TwinPutin</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --secondary-color: #f8fafc;
+            --accent-color: #4338ca;
+            --user-msg-bg: #eff6ff;
+            --user-msg-border: #bfdbfe;
+            --assistant-msg-bg: #f8fafc;
+            --assistant-msg-border: #e2e8f0;
+            --danger-color: #dc2626;
+            --danger-hover: #b91c1c;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
         body {
             overflow: hidden;
+            font-family: 'Inter', sans-serif;
+            background-color: #f1f5f9;
+            color: #1e293b;
         }
+        
         .app-container {
             height: 100vh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            background-color: #f8fafc;
+            max-width: 1200px;
+            margin: 0 auto;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
         }
+        
         .header {
-            padding: 1.5rem;
-            background-color: #ffffff;
+            padding: 1.25rem;
+            background-color: #fff;
             border-bottom: 1px solid #e5e7eb;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
             z-index: 10;
         }
+        
         .header h1 {
-            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            background: linear-gradient(90deg, #2563eb, #4338ca);
+            background-clip: text;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            font-weight: 800;
+            font-weight: 700;
             letter-spacing: -0.025em;
         }
-        .header button {
-            transition: all 0.2s ease;
-            background: linear-gradient(135deg, #dc2626, #ef4444);
-            border: none;
-            padding: 0.75rem 1.5rem;
+        
+        .clear-btn {
+            background-color: var(--danger-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
             font-weight: 600;
-            box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
-        .header button:hover {
+        
+        .clear-btn:hover {
+            background-color: var(--danger-hover);
             transform: translateY(-1px);
-            box-shadow: 0 4px 6px rgba(220, 38, 38, 0.3);
         }
+        
+        .clear-btn:active {
+            transform: translateY(0);
+        }
+        
         .loading {
             display: none;
             position: fixed;
@@ -53,35 +96,41 @@
             background-color: rgba(255, 255, 255, 0.95);
             padding: 2rem;
             border-radius: 1rem;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
             backdrop-filter: blur(8px);
         }
+        
         .loading.active {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
         }
+        
         .spinner {
             width: 70px;
             text-align: center;
             margin-bottom: 1rem;
         }
+        
         .spinner > div {
             width: 12px;
             height: 12px;
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            background-color: var(--primary-color);
             border-radius: 100%;
             display: inline-block;
             animation: bounce 1.4s infinite ease-in-out both;
             margin: 0 2px;
         }
+        
         .spinner .bounce1 {
             animation-delay: -0.32s;
         }
+        
         .spinner .bounce2 {
             animation-delay: -0.16s;
         }
+        
         @keyframes bounce {
             0%, 80%, 100% { 
                 transform: scale(0);
@@ -90,168 +139,413 @@
                 transform: scale(1.0);
             }
         }
+        
         .chat-container {
             flex: 1;
             overflow-y: auto;
             padding: 1.5rem;
             scroll-behavior: smooth;
-            background: linear-gradient(to bottom, #f8fafc, #f1f5f9);
+            background-color: #f8fafc;
+            background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23e2e8f0' fill-opacity='0.4' fill-rule='evenodd'/%3E%3C/svg%3E");
         }
+        
         .message {
             margin-bottom: 1.5rem;
             padding: 1.25rem;
-            border-radius: 1rem;
+            border-radius: 0.75rem;
             max-width: 85%;
-            transition: transform 0.2s ease;
-            animation: messageAppear 0.3s ease-out;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            animation: fadeIn 0.3s ease-out;
+            position: relative;
         }
-        @keyframes messageAppear {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
+        
         .user-message {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: white;
+            background-color: var(--user-msg-bg);
+            border: 1px solid var(--user-msg-border);
             margin-left: auto;
             margin-right: 1rem;
-            box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+            border-top-right-radius: 0.25rem;
         }
-        .user-message p {
-            color: white;
-            font-weight: 500;
-        }
+        
         .assistant-message {
-            background-color: white;
+            background-color: var(--assistant-msg-bg);
+            border: 1px solid var(--assistant-msg-border);
             margin-right: auto;
             margin-left: 1rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            border: 1px solid rgba(229, 231, 235, 0.5);
+            border-top-left-radius: 0.25rem;
         }
+        
+        .message p {
+            line-height: 1.6;
+        }
+        
         .input-container {
-            background-color: rgba(255, 255, 255, 0.9);
-            border-top: 1px solid rgba(229, 231, 235, 0.8);
-            padding: 1.5rem;
+            background-color: #fff;
+            border-top: 1px solid #e5e7eb;
+            padding: 1.25rem;
             z-index: 10;
-            backdrop-filter: blur(8px);
         }
+        
+        .query-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            background-color: #f1f5f9;
+            border-radius: 1rem;
+            padding: 0.5rem;
+            transition: all 0.3s ease;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .query-container:focus-within {
+            background-color: #fff;
+            box-shadow: 0 0 0 2px var(--primary-color), 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
         .query-textarea {
-            padding: 1rem !important;
+            padding: 0.75rem !important;
             min-height: 60px;
             max-height: 150px;
             resize: none;
-            border-radius: 1rem;
-            border: 2px solid rgba(229, 231, 235, 0.8);
+            border: none;
             width: 100%;
             font-size: 1rem;
             line-height: 1.5;
-            transition: all 0.2s ease;
-            background-color: white;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        }
-        .query-textarea:focus {
+            background-color: transparent;
             outline: none;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            font-family: 'Inter', sans-serif;
         }
-        .input-container button[type="submit"] {
-            width: 100%;
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
+        
+        .send-btn {
+            background-color: var(--primary-color);
             color: white;
-            padding: 1rem;
-            border-radius: 1rem;
+            border-radius: 0.75rem;
+            padding: 0.875rem 1.5rem;
             font-weight: 600;
-            transition: all 0.2s ease;
+            font-size: 0.9375rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            transition: all 0.2s;
             border: none;
-            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
             margin-top: 1rem;
         }
-        .input-container button[type="submit"]:hover {
+        
+        .send-btn:hover {
+            background-color: var(--primary-hover);
             transform: translateY(-1px);
-            box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
         }
+        
+        .send-btn:active {
+            transform: translateY(0);
+        }
+        
         .response-iframe {
             width: 100%;
             min-height: 200px;
             border: none;
-            background: white;
+            background: transparent;
             border-radius: 0.5rem;
             transition: height 0.3s ease;
         }
+        
         .web-search-results {
-            background-color: rgba(255, 255, 255, 0.9);
-            border: 1px solid rgba(229, 231, 235, 0.8);
-            border-radius: 1rem;
-            margin-bottom: 1rem;
+            background-color: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.75rem;
+            margin-bottom: 0.75rem;
             overflow: hidden;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
+        
         .web-search-toggle {
             width: 100%;
-            padding: 1rem 1.25rem;
+            padding: 0.75rem 1rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: linear-gradient(to right, rgba(249, 250, 251, 0.8), rgba(243, 244, 246, 0.8));
-            cursor: pointer;
-            transition: all 0.2s ease;
+            background-color: #f1f5f9;
             border: none;
-            font-size: 0.95rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
         }
+        
         .web-search-toggle:hover {
-            background: linear-gradient(to right, rgba(243, 244, 246, 0.9), rgba(229, 231, 235, 0.9));
+            background-color: #e2e8f0;
         }
+        
         .web-search-toggle i {
-            transition: transform 0.3s ease;
-            color: #6b7280;
-            font-size: 0.875rem;
+            transition: transform 0.3s;
+            color: #64748b;
         }
+        
         .web-search-toggle.active i {
             transform: rotate(180deg);
-            color: #3b82f6;
         }
+        
         .web-search-content {
             max-height: 0;
             overflow: hidden;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            padding: 0 1.25rem;
-            opacity: 0;
+            transition: max-height 0.4s ease-out;
+            padding: 0 1rem;
         }
+        
         .web-search-content.active {
             max-height: 500px;
-            padding: 1.25rem;
-            opacity: 1;
-            background-color: white;
+            padding: 1rem;
+            overflow-y: auto;
         }
+        
         .web-search-item {
-            margin-bottom: 1rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid rgba(229, 231, 235, 0.5);
-            transition: transform 0.2s ease;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #e2e8f0;
         }
-        .web-search-item:hover {
-            transform: translateX(4px);
-        }
+        
         .web-search-item:last-child {
             margin-bottom: 0;
             padding-bottom: 0;
             border-bottom: none;
         }
-        .web-search-item p {
-            color: #4b5563;
-            line-height: 1.5;
-            font-size: 0.95rem;
+
+        /* Scrollbar styling */
+        .chat-container::-webkit-scrollbar, 
+        .web-search-content::-webkit-scrollbar {
+            width: 8px;
         }
-        .loading p {
-            color: #4b5563;
-            font-weight: 500;
-            font-size: 1rem;
+        
+        .chat-container::-webkit-scrollbar-track,
+        .web-search-content::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        
+        .chat-container::-webkit-scrollbar-thumb,
+        .web-search-content::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 20px;
+        }
+        
+        .chat-container::-webkit-scrollbar-thumb:hover,
+        .web-search-content::-webkit-scrollbar-thumb:hover {
+            background-color: #94a3b8;
+        }
+
+        /* Custom Dashboard */
+        .dashboard-toggle {
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-right: 1rem;
+        }
+        
+        .dashboard-toggle:hover {
+            background-color: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+        
+        .dashboard-toggle:active {
+            transform: translateY(0);
+        }
+        
+        .add-to-canvas {
+            position: absolute;
+            top: 0.75rem;
+            right: 0.75rem;
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 0.375rem;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            z-index: 5;
+        }
+        
+        .assistant-message:hover .add-to-canvas {
+            opacity: 1;
+        }
+        
+        .canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            display: none;
+            overflow: auto;
+            padding: 2rem;
+        }
+        
+        .canvas-container.active {
+            display: block;
+        }
+        
+        .canvas-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .canvas-title {
+            color: white;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .close-canvas {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: none;
+            border-radius: 0.375rem;
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.375rem;
+        }
+        
+        .close-canvas:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        .canvas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .canvas-item {
+            background-color: white;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            position: absolute;
+            min-width: 300px;
+            min-height: 200px;
+            resize: both;
+            overflow: auto;
+        }
+        
+        .canvas-item-header {
+            padding: 0.75rem;
+            background-color: #f1f5f9;
+            border-bottom: 1px solid #e2e8f0;
+            cursor: move;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .canvas-item-title {
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: #334155;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
+        }
+        
+        .canvas-item-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .canvas-item-action {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #64748b;
+            padding: 0.25rem;
+            border-radius: 0.25rem;
+            transition: background-color 0.2s;
+        }
+        
+        .canvas-item-action:hover {
+            background-color: #e2e8f0;
+            color: #334155;
+        }
+        
+        .canvas-item-content {
+            padding: 0.75rem;
+            height: calc(100% - 3rem);
+            overflow: auto;
+        }
+        
+        .canvas-item-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        .canvas-empty {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 4rem 2rem;
+            color: white;
+        }
+        
+        .canvas-empty i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Empty chat state */
+        .empty-chat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            text-align: center;
+            color: #64748b;
+            padding: 2rem;
+        }
+        
+        .empty-chat i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            color: #94a3b8;
+        }
+        
+        @media (max-width: 640px) {
+            .message {
+                max-width: 95%;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
         }
     </style>
 </head>
@@ -260,39 +554,60 @@
         <div class="header">
             <div class="container mx-auto px-4">
                 <div class="flex justify-between items-center">
-                    <h1 class="text-3xl font-bold text-gray-900">Putin Digital Twin</h1>
-                    <button onclick="clearChat()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">Clear Chat</button>
+                    <h1 class="text-3xl font-bold">TwinPutin</h1>
+                    <div class="flex items-center">
+                        <button onclick="openCanvas()" class="dashboard-toggle">
+                            <i class="fas fa-eye"></i>
+                            Eagle View
+                        </button>
+                        <button onclick="clearChat()" class="clear-btn">
+                            <i class="fas fa-trash-alt"></i>
+                            Clear Chat
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
         
         <div class="chat-container" id="chatContainer">
-            {% for message in chat_history %}
-                {% if message.role == 'user' %}
-                    <div class="message user-message">
-                        <p class="text-gray-800">{{ message.content }}</p>
-                    </div>
-                {% else %}
-                    <div class="message assistant-message">
-                        {% if message.web_results %}
-                        <div class="web-search-results">
-                            <button class="web-search-toggle">
-                                <span class="text-sm font-medium text-gray-700">View Web Search Results</span>
-                                <i class="fas fa-chevron-down text-gray-500"></i>
-                            </button>
-                            <div class="web-search-content">
-                                {% for result in message.web_results %}
-                                <div class="web-search-item">
-                                    <p class="text-sm text-gray-600">{{ result }}</p>
-                                </div>
-                                {% endfor %}
-                            </div>
+            {% if chat_history %}
+                {% for message in chat_history %}
+                    {% if message.role == 'user' %}
+                        <div class="message user-message">
+                            <p class="text-gray-800">{{ message.content }}</p>
                         </div>
-                        {% endif %}
-                        <iframe class="response-iframe" srcdoc="{{ message.content|safe }}" onload="resizeIframe(this)"></iframe>
-                    </div>
-                {% endif %}
-            {% endfor %}
+                    {% else %}
+                        <div class="message assistant-message">
+                            {% if message.web_results %}
+                            <div class="web-search-results">
+                                <button class="web-search-toggle">
+                                    <span class="text-sm font-medium text-gray-700">View Web Search Results</span>
+                                    <i class="fas fa-chevron-down text-gray-500"></i>
+                                </button>
+                                <div class="web-search-content">
+                                    {% for result in message.web_results %}
+                                    <div class="web-search-item">
+                                        <p class="text-sm text-gray-600">{{ result }}</p>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            <button class="add-to-canvas" onclick="addToCanvasFromElement(this)">
+                                <i class="fas fa-plus"></i>
+                                Add to Canvas
+                            </button>
+                            <iframe class="response-iframe" srcdoc="{{ message.content|safe }}" onload="resizeIframe(this)"></iframe>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                <div class="empty-chat">
+                    <i class="fas fa-comments"></i>
+                    <h2 class="text-xl font-semibold mb-2">Start Your Conversation</h2>
+                    <p>Ask about Putin's timeline, decisions, or recent events to get insights from the digital twin.</p>
+                </div>
+            {% endif %}
         </div>
 
         <div class="loading">
@@ -301,13 +616,13 @@
                 <div class="bounce2"></div>
                 <div class="bounce3"></div>
             </div>
-            <p class="text-gray-600 font-medium">Generating response...</p>
+            <p class="text-gray-700 font-medium">Generating response...</p>
         </div>
 
         <div class="input-container">
             <div class="container mx-auto px-4">
                 <form id="queryForm" class="space-y-4">
-                    <div>
+                    <div class="query-container">
                         <textarea 
                             id="query" 
                             name="query" 
@@ -315,7 +630,8 @@
                             placeholder="Ask about Putin's timeline, decisions, or recent events..."
                         ></textarea>
                     </div>
-                    <button type="submit" class="w-full bg-indigo-600 text-white px-6 py-3 rounded-lg text-lg font-semibold hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200">
+                    <button type="submit" class="send-btn w-full">
+                        <i class="fas fa-paper-plane"></i>
                         Send Message
                     </button>
                 </form>
@@ -323,8 +639,32 @@
         </div>
     </div>
 
+    <div class="canvas-container" id="canvasContainer">
+        <div class="canvas-header">
+            <h2 class="canvas-title">Eagle's Eye</h2>
+            <button class="close-canvas" onclick="closeCanvas()">
+                <i class="fas fa-times"></i>
+                Close
+            </button>
+        </div>
+        <div class="canvas-workspace" id="canvasWorkspace">
+            <div class="canvas-empty" id="canvasEmpty">
+                <i class="fas fa-border-all"></i>
+                <h3 class="text-xl font-semibold mb-2">Your Canvas is Empty</h3>
+                <p>Add content from the chat by clicking "Add to Canvas" on any assistant response.</p>
+            </div>
+        </div>
+    </div>
+
     <script>
         const chatContainer = document.getElementById('chatContainer');
+        const canvasContainer = document.getElementById('canvasContainer');
+        const canvasWorkspace = document.getElementById('canvasWorkspace');
+        const canvasEmpty = document.getElementById('canvasEmpty');
+        let canvasItems = [];
+        let draggingElem = null;
+        let offsetX = 0;
+        let offsetY = 0;
         
         // Function to resize iframe based on content
         function resizeIframe(iframe) {
@@ -349,9 +689,228 @@
             fetch('/clear_chat', {
                 method: 'POST',
             }).then(() => {
-                chatContainer.innerHTML = '';
+                chatContainer.innerHTML = `
+                    <div class="empty-chat">
+                        <i class="fas fa-comments"></i>
+                        <h2 class="text-xl font-semibold mb-2">Start Your Conversation</h2>
+                        <p>Ask about Putin's timeline, decisions, or recent events to get insights from the digital twin.</p>
+                    </div>
+                `;
             });
         }
+
+        // Canvas functionality
+        function openCanvas() {
+            canvasContainer.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeCanvas() {
+            canvasContainer.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function addToCanvasFromElement(button) {
+            const messageEl = button.parentNode;
+            const iframe = messageEl.querySelector('.response-iframe');
+            const content = iframe.getAttribute('srcdoc');
+            addToCanvas(messageEl, content);
+        }
+
+        function addToCanvas(messageEl, content) {
+            // Get a simple title from the content
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = content;
+            let title = '';
+            
+            // Try to extract a title from h1, h2, or text content
+            const h1 = tempDiv.querySelector('h1');
+            const h2 = tempDiv.querySelector('h2');
+            
+            if (h1) {
+                title = h1.textContent.trim();
+            } else if (h2) {
+                title = h2.textContent.trim();
+            } else {
+                title = tempDiv.textContent.trim().substring(0, 30) + '...';
+            }
+            
+            // Create a unique ID for the canvas item
+            const itemId = 'canvas-item-' + Date.now();
+            
+            // Create canvas item
+            const item = {
+                id: itemId,
+                title: title,
+                content: content,
+                position: { x: 20 + (canvasItems.length * 30) % 300, y: 80 + (canvasItems.length * 30) % 300 },
+                size: { width: 400, height: 300 }
+            };
+            
+            canvasItems.push(item);
+            renderCanvasItems();
+            
+            // Show a success message
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+            toast.innerHTML = '<i class="fas fa-check mr-2"></i> Added to canvas';
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+            
+            // Save to localStorage
+            saveCanvasToStorage();
+        }
+        
+        function removeFromCanvas(itemId) {
+            canvasItems = canvasItems.filter(item => item.id !== itemId);
+            renderCanvasItems();
+            saveCanvasToStorage();
+        }
+        
+        function renderCanvasItems() {
+            // Hide "empty" message if we have items
+            canvasEmpty.style.display = canvasItems.length ? 'none' : 'block';
+            
+            // Clear existing canvas items (except the empty message)
+            const existingItems = canvasWorkspace.querySelectorAll('.canvas-item');
+            existingItems.forEach(item => {
+                if (!item.classList.contains('canvas-empty')) {
+                    item.remove();
+                }
+            });
+            
+            // Add each item to the canvas
+            canvasItems.forEach(item => {
+                const itemEl = document.createElement('div');
+                itemEl.className = 'canvas-item';
+                itemEl.id = item.id;
+                itemEl.style.left = `${item.position.x}px`;
+                itemEl.style.top = `${item.position.y}px`;
+                itemEl.style.width = `${item.size.width}px`;
+                itemEl.style.height = `${item.size.height}px`;
+                
+                itemEl.innerHTML = `
+                    <div class="canvas-item-header" data-id="${item.id}">
+                        <div class="canvas-item-title">${item.title}</div>
+                        <div class="canvas-item-actions">
+                            <button class="canvas-item-action" onclick="removeFromCanvas('${item.id}')">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="canvas-item-content">
+                        <iframe class="canvas-item-iframe" srcdoc="${item.content.replace(/"/g, '&quot;')}" frameborder="0"></iframe>
+                    </div>
+                `;
+                
+                canvasWorkspace.appendChild(itemEl);
+            });
+        }
+        
+        // Dragging functionality
+        canvasWorkspace.addEventListener('mousedown', function(e) {
+            const header = e.target.closest('.canvas-item-header');
+            if (!header) return;
+            
+            draggingElem = header.closest('.canvas-item');
+            
+            // Get initial mouse position
+            const rect = draggingElem.getBoundingClientRect();
+            offsetX = e.clientX - rect.left;
+            offsetY = e.clientY - rect.top;
+            
+            // Bring to front
+            draggingElem.style.zIndex = 10;
+            
+            // Prevent text selection during drag
+            e.preventDefault();
+        });
+        
+        document.addEventListener('mousemove', function(e) {
+            if (!draggingElem) return;
+            
+            // Set new position
+            const x = e.clientX - offsetX;
+            const y = e.clientY - offsetY;
+            
+            draggingElem.style.left = `${x}px`;
+            draggingElem.style.top = `${y}px`;
+        });
+        
+        document.addEventListener('mouseup', function() {
+            if (!draggingElem) return;
+            
+            // Update item position in our data
+            const itemId = draggingElem.id;
+            const item = canvasItems.find(item => item.id === itemId);
+            if (item) {
+                item.position = {
+                    x: parseInt(draggingElem.style.left),
+                    y: parseInt(draggingElem.style.top)
+                };
+                
+                // Update size too in case it was resized
+                item.size = {
+                    width: draggingElem.offsetWidth,
+                    height: draggingElem.offsetHeight
+                };
+                
+                saveCanvasToStorage();
+            }
+            
+            draggingElem.style.zIndex = '';
+            draggingElem = null;
+        });
+        
+        // Handle resizing through the resize observer
+        function setupResizeObserver() {
+            const resizeObserver = new ResizeObserver(entries => {
+                for (let entry of entries) {
+                    const itemId = entry.target.id;
+                    const item = canvasItems.find(item => item.id === itemId);
+                    if (item) {
+                        item.size = {
+                            width: entry.contentRect.width,
+                            height: entry.contentRect.height
+                        };
+                        saveCanvasToStorage();
+                    }
+                }
+            });
+            
+            // Observe all canvas items
+            document.querySelectorAll('.canvas-item').forEach(item => {
+                resizeObserver.observe(item);
+            });
+        }
+        
+        // Storage functions
+        function saveCanvasToStorage() {
+            localStorage.setItem('putinTwinCanvas', JSON.stringify(canvasItems));
+        }
+        
+        function loadCanvasFromStorage() {
+            const stored = localStorage.getItem('putinTwinCanvas');
+            if (stored) {
+                try {
+                    canvasItems = JSON.parse(stored);
+                    renderCanvasItems();
+                } catch (e) {
+                    console.error('Error loading canvas from storage:', e);
+                }
+            }
+        }
+        
+        // Load canvas items on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            loadCanvasFromStorage();
+            
+            // Add resize observer after initial render
+            setTimeout(setupResizeObserver, 500);
+        });
 
         // Auto-resize textarea
         const textarea = document.getElementById('query');
@@ -379,6 +938,12 @@
             if (!query.trim()) {
                 alert('Please enter a query');
                 return;
+            }
+
+            // Remove empty chat state if present
+            const emptyChat = document.querySelector('.empty-chat');
+            if (emptyChat) {
+                emptyChat.remove();
             }
 
             // Add user message immediately
@@ -427,6 +992,15 @@
                         `;
                         assistantMessage.appendChild(webSearchResults);
                     }
+
+                    // Add button to add to canvas
+                    const addToCanvasBtn = document.createElement('button');
+                    addToCanvasBtn.className = 'add-to-canvas';
+                    addToCanvasBtn.innerHTML = '<i class="fas fa-plus"></i> Add to Canvas';
+                    addToCanvasBtn.onclick = function() {
+                        addToCanvasFromElement(this);
+                    };
+                    assistantMessage.appendChild(addToCanvasBtn);
 
                     // Add iframe for the main response
                     const iframe = document.createElement('iframe');

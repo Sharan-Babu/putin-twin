@@ -1,37 +1,54 @@
-# Generative UI Chatbot
+# TwinPutin
 
-A dynamic web application that generates custom UI responses based on user queries about Vladimir Putin's timeline, combining historical data with real-time web search results using Google's Gemini AI.
+A digital twin application for simulating conversations with Vladimir Putin, with the ability to visualize and organize responses in a custom dashboard view called Eagle's Eye.
+
+## Setup Instructions
+
+### 1. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 2. Set Up Environment Variables
+
+Copy the `.env.example` file to `.env` and fill in your API keys:
+
+```bash
+cp .env.example .env
+```
+
+Then edit the `.env` file and add your API keys:
+
+```
+GEMINI_API_KEY=your_gemini_api_key_here
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+FLASK_SECRET_KEY=your_secret_key_here
+FLASK_ENV=development
+```
+
+### 3. Run the Application
+
+```bash
+cd app
+python app.py
+```
+
+The application will be available at http://localhost:5000
 
 ## Features
 
-- Interactive query interface for users
-- Real-time web search integration using Gemini AI
-- Dynamic HTML UI generation based on user queries
-- Combines historical timeline data with recent web updates
-- Modern, responsive interface using Tailwind CSS
-- Live preview of generated UI in an iframe
+- Chat interface with Putin's digital twin
+- Real-time web search for up-to-date information
+- Eagle's Eye dashboard for organizing and viewing multiple responses
+- Draggable and resizable response containers
+- Persistence of dashboard layouts between sessions
 
 ## Prerequisites
 
 - Python 3.8 or higher
 - pip (Python package manager)
 - A Gemini API key
-
-## Installation
-
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd <repository-name>
-```
-
-2. Install the required dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-3. Set up your Gemini API key:
-The API key is currently hardcoded in the application for development purposes. In a production environment, you should move it to an environment variable.
 
 ## Project Structure
 

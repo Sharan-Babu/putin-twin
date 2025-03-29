@@ -3,19 +3,22 @@ from flask import Flask, render_template, request, jsonify, session
 import google.generativeai as genai
 from openai import OpenAI
 import re
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-here'  # Required for session management
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'fallback-secret-key')  # Required for session management
 
 # Configure Gemini API
-GEMINI_API_KEY = "AIzaSyDy3vyaXfTzO5QdcO6ClsuvLmC2fV_vjB0"
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 genai.configure(api_key=GEMINI_API_KEY)
 
 # Configure OpenRouter API
-OPENROUTER_API_KEY = "YOUR_OPENROUTER_API_KEY"  # Replace with your actual API key
 openai_client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
-    api_key="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"
+    api_key=os.getenv('OPENROUTER_API_KEY'),
 )
 
 # Load the datasource content
@@ -29,7 +32,7 @@ def get_web_search_results_perplexity(query):
             messages=[
                 {
                     "role": "system",
-                    "content": "You are a research assistant. Search for and provide recent news, developments, and factual information about the query. Include specific dates and citations from reliable sources. Focus on verifiable information and format your response in a clear, organized way. Return the information as a list of bullet points, with each point being a separate finding or fact."
+                    "content": "All query will be related to Putin and Russia. Search for and provide recent news, developments, and factual information about the query. Include specific dates and citations from reliable sources. Focus on verifiable information and format your response in a clear, organized way. Return the information as a list of bullet points, with each point being a separate finding or fact."
                 },
                 {
                     "role": "user",
@@ -46,34 +49,6 @@ def get_web_search_results_perplexity(query):
         print(f"Perplexity web search error: {str(e)}")
         return []
 
-def get_web_search_results(query):
-    try:
-        # First try Perplexity Sonar
-        perplexity_results = get_web_search_results_perplexity(query)
-        if perplexity_results:
-            return perplexity_results
-        
-        # Fallback to Gemini if Perplexity fails
-        model = genai.GenerativeModel('gemini-pro')
-        prompt = f"""Based on this query: "{query}", search for and provide recent news, developments, and factual information. 
-        Include specific dates and citations from reliable sources. Focus on verifiable information that would enhance our understanding of the query.
-        Format your response as a bullet-point list, with each point being a separate finding or fact."""
-
-        response = model.generate_content(
-            prompt,
-            generation_config=genai.types.GenerationConfig(
-                temperature=0.5
-            )
-        )
-        
-        # Split the response into bullet points and clean them up
-        results = response.text.split('\n')
-        # Clean up and filter empty lines
-        results = [line.strip().lstrip('•-* ') for line in results if line.strip()]
-        return results
-    except Exception as e:
-        print(f"Web search error: {str(e)}")
-        return []
 
 def clean_html_response(html_text):
     # Remove any ``` markers
@@ -90,7 +65,7 @@ def generate_html(query, chat_history=None):
     if chat_history is None:
         chat_history = []
 
-    # First, get web search results
+    # Get web search results
     web_results = get_web_search_results_perplexity(query)
     
     # Initialize the model
@@ -126,11 +101,12 @@ Instructions:
 3. Reference relevant parts of the previous conversation if needed
 4. Generate a single HTML file that visualizes your response
 5. Make the HTML modern, responsive, and visually appealing (can use external libraries via CDN)
-6. DO NOT include disclaimers, footers, or images
+6. DO NOT include disclaimers, footers, or images. You may use icons or emojis instead of images.
 7. If the query references something from previous conversation, make sure to maintain that context
+8. Answer in first person, as if you are Putin himself.
 """
 
-    print(combined_content)
+    #print(combined_content)
     # Send the combined content
     response = model.generate_content(
         combined_content,
@@ -139,7 +115,7 @@ Instructions:
         )
     )
     
-    return clean_html_response(response.text)
+    return clean_html_response(response.text), web_results
 
 @app.route('/')
 def home():
@@ -163,9 +139,8 @@ def generate():
             'content': query
         })
         
-        # Generate response
-        generated_html = generate_html(query, chat_history)
-        web_results = get_web_search_results(query)
+        # Generate response and get web results
+        generated_html, web_results = generate_html(query, chat_history)
         
         # Add assistant response to history with web results
         chat_history.append({
@@ -191,4 +166,4 @@ def clear_chat():
     return jsonify({'status': 'success'})
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=8080) 
+    app.run(debug=True) 
