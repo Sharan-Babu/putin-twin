@@ -16,7 +16,7 @@ with open('datasource.txt', 'r', encoding='utf-8') as file:
 def get_web_search_results(query):
     model = genai.GenerativeModel('gemini-2.0-flash')
     
-    prompt = f"""Based on this query: "{query}", fetch relevant recent news and information. Please format your response in a clear, organized way with proper citations."""
+    prompt = f"""Based on this query: "{query}", fetch relevant recent news and information and return it. That is all."""
 
     try:
         response = model.generate_content(prompt, safety_settings={'HARASSMENT': 'block_none'})
