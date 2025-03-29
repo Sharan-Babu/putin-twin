@@ -1,8 +1,6 @@
 import os
 from flask import Flask, render_template, request, jsonify
 import google.generativeai as genai
-from google.genai import types
-from google.ai import generativelanguage as glm
 import re
 
 app = Flask(__name__)
@@ -16,41 +14,18 @@ with open('datasource.txt', 'r', encoding='utf-8') as file:
     DATASOURCE_CONTENT = file.read()
 
 def get_web_search_results(query):
-    client = genai.Client(
-        api_key=GEMINI_API_KEY,
-    )
+    model = genai.GenerativeModel('gemini-2.0-flash')
+    
+    prompt = f"""Based on this query: "{query}", fetch relevant recent news and information. Include citations in your response. Focus on factual, verifiable information that would enhance our understanding of the query.
 
-    model = "gemini-2.0-flash"
-    contents = [
-        types.Content(
-            role="user",
-            parts=[
-                types.Part.from_text(text=f"""Based on this query: "{query}", fetch relevant recent news and information. Include citations in your response. Focus on factual, verifiable information that would enhance our understanding of the query."""),
-            ],
-        ),
-    ]
-    tools = [
-        types.Tool(google_search=types.GoogleSearch())
-    ]
-    generate_content_config = types.GenerateContentConfig(
-        temperature=0.4,
-        tools=tools,
-        response_mime_type="text/plain",
-    )
+Please format your response in a clear, organized way with proper citations."""
 
-    response_text = ""
     try:
-        for chunk in client.models.generate_content_stream(
-            model=model,
-            contents=contents,
-            config=generate_content_config,
-        ):
-            response_text += chunk.text
+        response = model.generate_content(prompt, safety_settings={'HARASSMENT': 'block_none'})
+        return response.text
     except Exception as e:
         print(f"Web search error: {str(e)}")
         return ""
-    
-    return response_text
 
 def clean_html_response(html_text):
     # Remove any ``` markers
@@ -76,7 +51,7 @@ Recent Updates and Additional Information:
 {web_results}
 """
     
-    model = genai.GenerativeModel("gemini-2.0-flash-thinking-exp-01-21")
+    model = genai.GenerativeModel("gemini-2.0-flash")
     prompt = f"""Based on the following query: "{query}", generate a single HTML file that visualizes or presents relevant information from this datasource content. The HTML should be modern, responsive, and can use external libraries via CDN. Include any necessary CSS and JavaScript inline or via CDN links. Make it visually appealing and interactive where appropriate.
 
 Here's the combined datasource content to use:
@@ -85,7 +60,7 @@ Here's the combined datasource content to use:
 
 Return ONLY the complete HTML code without any explanations or markdown formatting. The HTML should incorporate both historical timeline data and recent updates where relevant. Return only the HTML code for the question asked and nothing else."""
 
-    response = model.generate_content(prompt)
+    response = model.generate_content(prompt, safety_settings={'HARASSMENT': 'block_none'})
     return clean_html_response(response.text)
 
 @app.route('/')
