@@ -80,7 +80,7 @@
                         ></textarea>
                     </div>
                     <button type="submit" class="w-full bg-indigo-600 text-white px-6 py-3 rounded-lg text-lg font-semibold hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200">
-                        Generate Visualization
+                        Get Twin's response
                     </button>
                 </form>
             </div>
@@ -91,7 +91,7 @@
                     <div class="bounce2"></div>
                     <div class="bounce3"></div>
                 </div>
-                <p class="mt-4 text-gray-600 font-medium">Generating your visualization...</p>
+                <p class="mt-4 text-gray-600 font-medium">Fetching answer...</p>
             </div>
 
             <div id="result" class="bg-white rounded-xl shadow-lg overflow-hidden">
@@ -145,7 +145,7 @@
                     // Scroll to result
                     result.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 } else {
-                    throw new Error(data.error || 'Failed to generate visualization');
+                    throw new Error(data.error || 'Failed to generate answer');
                 }
             } catch (error) {
                 alert('Error: ' + error.message);
