@@ -3,40 +3,98 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generative UI Chatbot</title>
+    <title>Putin Digital Twin</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .loading {
             display: none;
         }
         .loading.active {
-            display: block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .spinner {
+            width: 70px;
+            text-align: center;
+        }
+        .spinner > div {
+            width: 12px;
+            height: 12px;
+            background-color: #4f46e5;
+            border-radius: 100%;
+            display: inline-block;
+            animation: bounce 1.4s infinite ease-in-out both;
+            margin: 0 2px;
+        }
+        .spinner .bounce1 {
+            animation-delay: -0.32s;
+        }
+        .spinner .bounce2 {
+            animation-delay: -0.16s;
+        }
+        @keyframes bounce {
+            0%, 80%, 100% { 
+                transform: scale(0);
+            } 
+            40% { 
+                transform: scale(1.0);
+            }
+        }
+        .query-textarea {
+            padding: 1rem !important;
+            min-height: 120px;
+            resize: vertical;
+            border-radius: 0.5rem;
+            border: 2px solid #e5e7eb;
+            width: 100%;
+            font-size: 1rem;
+            line-height: 1.5;
+            transition: border-color 0.15s ease-in-out;
+        }
+        .query-textarea:focus {
+            outline: none;
+            border-color: #4f46e5;
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
         }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-gray-50 min-h-screen">
     <div class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold text-center mb-8">Generative UI Chatbot</h1>
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">Putin Digital Twin</h1>
+            <p class="text-gray-600 text-lg">Ask questions about Putin's timeline and get interactive visualizations</p>
+        </div>
         
         <div class="max-w-3xl mx-auto">
-            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                <form id="queryForm" class="space-y-4">
+            <div class="bg-white rounded-xl shadow-lg p-8 mb-8">
+                <form id="queryForm" class="space-y-6">
                     <div>
-                        <label for="query" class="block text-sm font-medium text-gray-700">Enter your query:</label>
-                        <textarea id="query" name="query" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500" placeholder="e.g., 'Show me a timeline of Putin's key political events'"></textarea>
+                        <label for="query" class="block text-lg font-medium text-gray-700 mb-3">What would you like to know?</label>
+                        <textarea 
+                            id="query" 
+                            name="query" 
+                            class="query-textarea"
+                            placeholder="e.g., 'Show me Putin's major political events in 2024' or 'Create a timeline of key decisions during the Ukraine conflict'"
+                        ></textarea>
                     </div>
-                    <button type="submit" class="w-full bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-                        Generate UI
+                    <button type="submit" class="w-full bg-indigo-600 text-white px-6 py-3 rounded-lg text-lg font-semibold hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors duration-200">
+                        Generate Visualization
                     </button>
                 </form>
             </div>
 
-            <div class="loading text-center py-4">
-                <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-indigo-600 border-t-transparent"></div>
-                <p class="mt-2 text-gray-600">Generating UI...</p>
+            <div class="loading text-center py-8">
+                <div class="spinner">
+                    <div class="bounce1"></div>
+                    <div class="bounce2"></div>
+                    <div class="bounce3"></div>
+                </div>
+                <p class="mt-4 text-gray-600 font-medium">Generating your visualization...</p>
             </div>
 
-            <div id="result" class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div id="result" class="bg-white rounded-xl shadow-lg overflow-hidden">
                 <iframe id="resultFrame" class="w-full min-h-screen border-0"></iframe>
             </div>
         </div>
@@ -48,9 +106,15 @@
             const query = document.getElementById('query').value;
             const loading = document.querySelector('.loading');
             const resultFrame = document.getElementById('resultFrame');
+            const result = document.getElementById('result');
+
+            if (!query.trim()) {
+                alert('Please enter a query');
+                return;
+            }
 
             loading.classList.add('active');
-            resultFrame.style.display = 'none';
+            result.style.display = 'none';
 
             try {
                 const response = await fetch('/generate', {
@@ -65,7 +129,7 @@
                 
                 if (response.ok) {
                     const frame = document.getElementById('resultFrame');
-                    frame.style.display = 'block';
+                    result.style.display = 'block';
                     
                     // Write the HTML content to the iframe
                     const frameDoc = frame.contentDocument || frame.contentWindow.document;
@@ -77,8 +141,11 @@
                     frame.onload = () => {
                         frame.style.height = frame.contentWindow.document.body.scrollHeight + 'px';
                     };
+
+                    // Scroll to result
+                    result.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 } else {
-                    throw new Error(data.error || 'Failed to generate UI');
+                    throw new Error(data.error || 'Failed to generate visualization');
                 }
             } catch (error) {
                 alert('Error: ' + error.message);
